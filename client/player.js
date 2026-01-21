@@ -8,6 +8,7 @@ const statusEl = document.getElementById("status");
 const questionEl = document.getElementById("question");
 const answerList = document.getElementById("answerList");
 const buzzBtn = document.getElementById("buzz");
+const waitingGif = document.getElementById("waitingGif");
 
 let answers = [];
 
@@ -26,6 +27,7 @@ socket.on("newRound", ({ question, answers: ans }) => {
       <span>${a.revealed ? a.score : ''}</span>
     </div>
   `).join('');
+  waitingGif.style.display = "none";
   statusEl.innerText = "TEKAN BUZZ!";
   buzzBtn.disabled = false;
 });
@@ -44,6 +46,7 @@ socket.on("waitForQuestion", () => {
   statusEl.innerText = "MENUNGGU SOAL...";
   questionEl.innerText = "-";
   answerList.innerHTML = "";
+  waitingGif.style.display = "block";
   buzzBtn.disabled = true;
   answers = [];
 });
