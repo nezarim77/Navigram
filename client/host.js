@@ -50,8 +50,13 @@ addAnswerBtn.onclick = () => {
   div.innerHTML = `
     <input placeholder="Jawaban">
     <input type="number" placeholder="Skor">
+    <button onclick="removeAnswer(this)">Hapus</button>
   `;
   answersDiv.appendChild(div);
+};
+
+function removeAnswer(btn) {
+  btn.parentElement.remove();
 };
 
 startBtn.onclick = () => {
