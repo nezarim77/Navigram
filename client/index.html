@@ -2,20 +2,40 @@
 <html>
 <head>
   <title>Navigram</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>Navigram</h2>
+  <div class="container center">
+    <h1>NAVIGRAM</h1>
 
-  <input id="name" placeholder="Nama">
-  <br><br>
+    <div class="card">
+      <input id="name" placeholder="Nama kamu">
+      <button onclick="create()">HOST GAME</button>
+    </div>
 
-  <button id="create">Create Room (Host)</button>
+    <div class="card">
+      <input id="joinName" placeholder="Nama kamu">
+      <input id="code" placeholder="Kode Room">
+      <button onclick="join()">JOIN GAME</button>
+    </div>
+  </div>
 
-  <hr>
+  <script>
+    function create() {
+      const name = document.getElementById("name").value;
+      if (!name) return alert("Isi nama");
+      localStorage.setItem("playerName", name);
+      window.location = "host.html";
+    }
 
-  <input id="code" placeholder="Kode Room">
-  <button id="join">Join Room</button>
-
-  <script src="index.js"></script>
+    function join() {
+      const name = document.getElementById("joinName").value;
+      const code = document.getElementById("code").value.toUpperCase();
+      if (!name || !code) return alert("Lengkapi data");
+      localStorage.setItem("playerName", name);
+      localStorage.setItem("roomCode", code);
+      window.location = "player.html";
+    }
+  </script>
 </body>
 </html>

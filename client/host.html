@@ -2,34 +2,43 @@
 <html>
 <head>
   <title>Host</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>HOST</h2>
-  <p>Kode Room: <b id="code">-</b></p>
-  <h3>Round Aktif</h3>
-<p id="activeQuestion">-</p>
+<div class="container">
+  <h2>HOST PANEL</h2>
 
+  <div class="card center">
+    <div>KODE ROOM</div>
+    <div id="code" class="code-box">-----</div>
+  </div>
 
-  <h3>Pertanyaan</h3>
-  <input id="question" placeholder="Masukkan pertanyaan">
+  <div class="card">
+    <h3>Buat Pertanyaan</h3>
+    <input id="question" placeholder="Pertanyaan">
 
-  <h3>Jawaban</h3>
-  <div id="answers"></div>
-  <button id="addAnswer">+ Tambah Jawaban</button>
+    <div id="answers"></div>
+    <button id="addAnswer">+ Jawaban</button>
+    <br><br>
+    <button id="start">START ROUND</button>
+  </div>
 
-  <br><br>
-  <button id="start">START ROUND</button>
+  <div class="card">
+    <h3>PERTANYAAN AKTIF</h3>
+    <div id="activeQuestion">-</div>
 
-  <h3>Buzz Winner</h3>
-  <p id="winner">-</p>
+    <div class="answer-board" id="answerList"></div>
+  </div>
 
-  <h3>Pilih Jawaban Benar</h3>
-  <ul id="answerList"></ul>
+  <div class="card">
+    <h3>PEMAIN</h3>
+    <ul id="players" class="players"></ul>
+    <h3>BUZZ</h3>
+    <div id="winner">-</div>
+  </div>
+</div>
 
-  <h3>Scoreboard</h3>
-  <ul id="players"></ul>
-
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-  <script src="host.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="host.js"></script>
 </body>
 </html>

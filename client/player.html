@@ -2,15 +2,19 @@
 <html>
 <head>
   <title>Player</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2 id="question">Menunggu soal...</h2>
+<div class="container center">
+  <h2 id="status">MENUNGGU SOAL...</h2>
 
-  <button id="buzz">BUZZ!</button>
+  <div class="card">
+    <h3 id="question">-</h3>
+    <button id="buzz" class="buzz-btn">BUZZ!</button>
+  </div>
+</div>
 
-  <p id="status"></p>
-
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-  <script src="player.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="player.js"></script>
 </body>
 </html>
