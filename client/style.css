@@ -8,12 +8,18 @@ body {
   background: radial-gradient(circle at top, #0a2a43, #000);
   color: #fff;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .container {
   max-width: 900px;
-  margin: auto;
+  margin: 0 auto;
   padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .center {
@@ -106,6 +112,7 @@ button:disabled {
   .container {
     padding: 10px;
     max-width: 100%;
+    justify-content: flex-start; /* Mulai dari atas untuk mobile dan tablet */
   }
 
   .card {
@@ -156,6 +163,7 @@ button:disabled {
 
   .container {
     padding: 5px;
+    justify-content: flex-start; /* Mulai dari atas untuk mobile panjang */
   }
 
   .card {
