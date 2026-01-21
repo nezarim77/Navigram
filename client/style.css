@@ -100,3 +100,99 @@ button:disabled {
   width: 100%;
   margin-top: 20px;
 }
+
+/* Media Queries untuk Responsivitas Mobile */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+    max-width: 100%;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  .answer-board {
+    grid-template-columns: 1fr; /* Ubah ke 1 kolom untuk mobile */
+    gap: 8px;
+  }
+
+  .answer {
+    font-size: 16px;
+    padding: 10px;
+  }
+
+  .code-box {
+    font-size: 24px;
+    letter-spacing: 4px;
+    padding: 8px 16px;
+  }
+
+  button {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  input {
+    font-size: 16px;
+  }
+
+  h1, h2, h3 {
+    font-size: 20px;
+  }
+
+  .buzz-btn {
+    font-size: 18px;
+    padding: 12px;
+  }
+}
+
+/* Media Queries untuk Mobile Kecil (Portrait) */
+@media (max-width: 480px) {
+  body {
+    min-height: auto; /* Hapus tinggi minimum agar konten tidak kosong di bawah */
+    overflow-x: hidden; /* Cegah scroll horizontal */
+  }
+
+  .container {
+    padding: 5px;
+  }
+
+  .card {
+    padding: 10px;
+    margin-bottom: 10px; /* Kurangi margin bawah untuk mengisi ruang */
+  }
+
+  .answer-board {
+    gap: 6px;
+  }
+
+  .answer {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .code-box {
+    font-size: 20px;
+    letter-spacing: 3px;
+    padding: 6px 12px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  input {
+    font-size: 14px;
+  }
+
+  h1, h2, h3 {
+    font-size: 18px;
+  }
+
+  .buzz-btn {
+    font-size: 16px;
+    padding: 10px;
+  }
+}
