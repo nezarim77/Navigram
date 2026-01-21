@@ -1,11 +1,11 @@
 * {
   box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top, #0a2a43, #000);
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
   color: #fff;
   min-height: 100vh;
   display: flex;
@@ -27,51 +27,70 @@ body {
 }
 
 .card {
-  background: #0f3b5f;
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 0 15px rgba(0,0,0,.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 h1, h2, h3 {
   margin-top: 0;
+  font-weight: 500;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 input, button {
   padding: 10px;
-  border-radius: 6px;
-  border: none;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   outline: none;
+  font-weight: 400;
 }
 
 input {
   width: 100%;
   margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 button {
   cursor: pointer;
-  background: gold;
-  font-weight: bold;
+  background: linear-gradient(45deg, #ff6b6b, #ffa500);
+  color: white;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 button:hover {
-  opacity: .85;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
 }
 
 button:disabled {
   background: #666;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .code-box {
   font-size: 32px;
   letter-spacing: 6px;
-  background: #000;
+  background: rgba(0, 0, 0, 0.5);
   padding: 10px 20px;
   border-radius: 8px;
   display: inline-block;
+  color: #ffd700;
+  border: 2px solid #ffd700;
 }
 
 .answer-board {
@@ -82,29 +101,40 @@ button:disabled {
 }
 
 .answer {
-  background: #111;
-  border: 2px solid gold;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid #ffd700;
   border-radius: 8px;
   padding: 12px;
   display: flex;
   justify-content: space-between;
   font-size: 18px;
+  transition: all 0.3s ease;
 }
 
 .answer.revealed {
-  background: #1e6f3d;
+  background: linear-gradient(45deg, #28a745, #20c997);
+  border-color: #28a745;
+  color: white;
 }
 
 .players li {
   margin-bottom: 6px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .buzz-btn {
-  background: red;
+  background: linear-gradient(45deg, #dc3545, #ff6b6b);
   font-size: 22px;
   padding: 15px;
   width: 100%;
   margin-top: 20px;
+  transition: all 0.3s ease;
+}
+
+.buzz-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
 }
 
 /* Media Queries untuk Responsivitas Mobile */
