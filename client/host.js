@@ -14,17 +14,35 @@ const buzzList = document.getElementById("buzzList");
 const startBtn = document.getElementById("start");
 const addAnswerBtn = document.getElementById("addAnswer");
 const nextTurnBtn = document.getElementById("nextTurn");
+const newRoundBtn = document.getElementById("newRoundBtn");
 
 let currentCode = "";
 
 socket.on("connect", () => {
-  socket.emit("createRoom", name);
+  const savedCode = localStorage.getItem("roomCode");
+  if (savedCode) {
+    socket.emit("reconnectHost", { code: savedCode, name });
+  } else {
+    socket.emit("createRoom", name);
+  }
 });
 
 socket.on("roomCreated", (code) => {
   currentCode = code;
   codeEl.innerText = code;
   localStorage.setItem("roomCode", code);
+});
+
+socket.on("roomReconnected", (code) => {
+  currentCode = code;
+  codeEl.innerText = code;
+  console.log("Reconnected to room:", code);
+});
+
+socket.on("reconnectFailed", () => {
+  alert("Gagal reconnect, membuat room baru");
+  localStorage.removeItem("roomCode");
+  socket.emit("createRoom", name);
 });
 
 addAnswerBtn.onclick = () => {
@@ -91,6 +109,10 @@ nextTurnBtn.onclick = () => {
   socket.emit("nextTurn", currentCode);
 };
 
+newRoundBtn.onclick = () => {
+  socket.emit("newRound", currentCode);
+};
+
 socket.on("playerList", (players) => {
   playersEl.innerHTML = "";
   players.forEach(p => {
@@ -113,3 +135,8 @@ socket.on("newRound", ({ question, answers }) => {
 function revealAnswer(index) {
   socket.emit("confirmAnswer", { code: currentCode, answerIndex: index });
 }
+
+socket.on("waitForQuestion", () => {
+  activeQuestionEl.innerText = "-";
+  answerList.innerHTML = "";
+});

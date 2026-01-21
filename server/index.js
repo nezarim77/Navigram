@@ -14,6 +14,33 @@ io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
   // =====================
+  // RECONNECT HOST
+  // =====================
+  socket.on("reconnectHost", ({ code, name }) => {
+    const room = rooms[code];
+    if (!room || room.hostName !== name) return socket.emit("reconnectFailed");
+
+    room.host = socket.id;
+    socket.join(code);
+    socket.emit("roomReconnected", code);
+    io.to(code).emit("playerList", room.players);
+    if (room.question) {
+      io.to(code).emit("newRound", {
+        question: room.question,
+        answers: room.answers
+      });
+    } else {
+      io.to(code).emit("waitForQuestion");
+    }
+    io.to(code).emit("buzzQueueUpdate", {
+      queue: room.buzzQueue,
+      active: room.buzzQueue[room.currentTurn] || null
+    });
+
+    console.log("HOST RECONNECTED:", code);
+  });
+
+  // =====================
   // CREATE ROOM
   // =====================
   socket.on("createRoom", (hostName) => {
@@ -21,6 +48,7 @@ io.on("connection", (socket) => {
 
     rooms[code] = {
       host: socket.id,
+      hostName,
       players: [],
       question: null,
       answers: [],
@@ -137,6 +165,27 @@ io.on("connection", (socket) => {
 
     io.to(code).emit("answerRevealed", { index: answerIndex });
     io.to(code).emit("playerList", room.players);
+  });
+
+  // =====================
+  // NEW ROUND
+  // =====================
+  socket.on("newRound", (code) => {
+    const room = rooms[code];
+    if (!room) return;
+
+    room.question = null;
+    room.answers = [];
+    room.buzzQueue = [];
+    room.currentTurn = 0;
+
+    io.to(code).emit("waitForQuestion");
+    io.to(code).emit("buzzQueueUpdate", {
+      queue: [],
+      active: null
+    });
+
+    console.log("NEW ROUND:", code);
   });
 
   // =====================

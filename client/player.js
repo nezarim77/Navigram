@@ -40,6 +40,14 @@ socket.on("answerRevealed", ({ index }) => {
   answerDivs[index].classList.add('revealed');
 });
 
+socket.on("waitForQuestion", () => {
+  statusEl.innerText = "MENUNGGU SOAL...";
+  questionEl.innerText = "-";
+  answerList.innerHTML = "";
+  buzzBtn.disabled = true;
+  answers = [];
+});
+
 socket.on("buzzQueueUpdate", ({ active }) => {
   if (!active) {
     statusEl.innerText = "MENUNGGU...";
