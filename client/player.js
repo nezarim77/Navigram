@@ -6,7 +6,10 @@ if (!name || !code) location.href = "index.html";
 
 const statusEl = document.getElementById("status");
 const questionEl = document.getElementById("question");
+const answerList = document.getElementById("answerList");
 const buzzBtn = document.getElementById("buzz");
+
+let answers = [];
 
 socket.emit("joinRoom", { name, code });
 
@@ -14,10 +17,27 @@ buzzBtn.onclick = () => {
   socket.emit("buzz", code);
 };
 
-socket.on("newRound", ({ question }) => {
+socket.on("newRound", ({ question, answers: ans }) => {
+  answers = ans;
   questionEl.innerText = question;
+  answerList.innerHTML = answers.map((a, i) => `
+    <div class="answer ${a.revealed ? 'revealed' : ''}">
+      ${a.revealed ? a.text : '???'}
+      <span>${a.revealed ? a.score : ''}</span>
+    </div>
+  `).join('');
   statusEl.innerText = "TEKAN BUZZ!";
   buzzBtn.disabled = false;
+});
+
+socket.on("answerRevealed", ({ index }) => {
+  const answerDivs = answerList.children;
+  const answer = answers[index];
+  answerDivs[index].innerHTML = `
+    ${answer.text}
+    <span>${answer.score}</span>
+  `;
+  answerDivs[index].classList.add('revealed');
 });
 
 socket.on("buzzQueueUpdate", ({ active }) => {
