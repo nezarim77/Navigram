@@ -10,15 +10,12 @@ app.use(express.static("client"));
 
 const rooms = {};
 
-// ==========================
-// SOCKET
-// ==========================
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  // ======================
+  // =====================
   // CREATE ROOM
-  // ======================
+  // =====================
   socket.on("createRoom", (hostName) => {
     const code = Math.random().toString(36).substring(2, 7).toUpperCase();
 
@@ -27,7 +24,8 @@ io.on("connection", (socket) => {
       players: [],
       question: null,
       answers: [],
-      buzzed: null
+      buzzQueue: [],
+      currentTurn: 0
     };
 
     socket.join(code);
@@ -36,9 +34,9 @@ io.on("connection", (socket) => {
     console.log("ROOM CREATED:", code);
   });
 
-  // ======================
+  // =====================
   // JOIN ROOM
-  // ======================
+  // =====================
   socket.on("joinRoom", ({ name, code }) => {
     const room = rooms[code];
     if (!room) return;
@@ -51,72 +49,99 @@ io.on("connection", (socket) => {
 
     socket.join(code);
     socket.emit("joinSuccess");
-
     io.to(code).emit("playerList", room.players);
 
     console.log("JOIN SUCCESS:", name, "to", code);
   });
 
-  // ======================
-  // SET QUESTION (🔥 INI YANG HILANG)
-  // ======================
+  // =====================
+  // SET QUESTION (START ROUND)
+  // =====================
   socket.on("setQuestion", ({ code, question, answers }) => {
     const room = rooms[code];
     if (!room) return;
 
     room.question = question;
-    room.answers = answers.map(a => ({
-      ...a,
-      revealed: false
-    }));
-    room.buzzed = null;
+    room.answers = answers.map(a => ({ ...a, revealed: false }));
+    room.buzzQueue = [];
+    room.currentTurn = 0;
 
     console.log("ROUND STARTED:", code, question);
 
-    // 🔥 INI YANG BIKIN PLAYER KELUAR DARI "MENUNGGU SOAL"
     io.to(code).emit("newRound", {
       question: room.question,
       answers: room.answers
     });
+
+    io.to(code).emit("buzzQueueUpdate", {
+      queue: [],
+      active: null
+    });
   });
 
-  // ======================
-  // BUZZ
-  // ======================
+  // =====================
+  // BUZZ (QUEUE SYSTEM)
+  // =====================
   socket.on("buzz", (code) => {
     const room = rooms[code];
-    if (!room || room.buzzed) return;
+    if (!room) return;
 
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
 
-    room.buzzed = player;
+    if (room.buzzQueue.find(p => p.id === player.id)) return;
 
-    io.to(code).emit("buzzWinner", player);
+    room.buzzQueue.push({ id: player.id, name: player.name });
+
+    io.to(code).emit("buzzQueueUpdate", {
+      queue: room.buzzQueue,
+      active: room.buzzQueue[room.currentTurn] || null
+    });
+
+    console.log("BUZZ:", player.name);
   });
 
-  // ======================
+  // =====================
+  // NEXT TURN (HOST CONTROL)
+  // =====================
+  socket.on("nextTurn", (code) => {
+    const room = rooms[code];
+    if (!room) return;
+
+    room.currentTurn++;
+
+    io.to(code).emit("buzzQueueUpdate", {
+      queue: room.buzzQueue,
+      active: room.buzzQueue[room.currentTurn] || null
+    });
+
+    console.log("NEXT TURN");
+  });
+
+  // =====================
   // CONFIRM ANSWER
-  // ======================
+  // =====================
   socket.on("confirmAnswer", ({ code, answerIndex }) => {
     const room = rooms[code];
     if (!room) return;
 
     const answer = room.answers[answerIndex];
-    if (!answer || answer.revealed || !room.buzzed) return;
+    const currentPlayer = room.buzzQueue[room.currentTurn];
+    if (!answer || answer.revealed || !currentPlayer) return;
+
+    const player = room.players.find(p => p.id === currentPlayer.id);
+    if (!player) return;
 
     answer.revealed = true;
-    room.buzzed.score += answer.score;
+    player.score += answer.score;
 
     io.to(code).emit("answerRevealed", { index: answerIndex });
     io.to(code).emit("playerList", room.players);
-
-    room.buzzed = null;
   });
 
-  // ======================
+  // =====================
   // DISCONNECT
-  // ======================
+  // =====================
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
 
@@ -124,6 +149,7 @@ io.on("connection", (socket) => {
       const room = rooms[code];
 
       room.players = room.players.filter(p => p.id !== socket.id);
+      room.buzzQueue = room.buzzQueue.filter(p => p.id !== socket.id);
 
       if (room.host === socket.id) {
         delete rooms[code];
@@ -135,9 +161,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// ==========================
-// START SERVER
-// ==========================
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log("Server running on port", PORT);

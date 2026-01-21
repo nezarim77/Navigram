@@ -1,9 +1,11 @@
 const socket = io();
+
 const name = localStorage.getItem("playerName");
 const code = localStorage.getItem("roomCode");
+if (!name || !code) location.href = "index.html";
 
-const questionEl = document.getElementById("question");
 const statusEl = document.getElementById("status");
+const questionEl = document.getElementById("question");
 const buzzBtn = document.getElementById("buzz");
 
 socket.emit("joinRoom", { name, code });
@@ -14,17 +16,22 @@ buzzBtn.onclick = () => {
 
 socket.on("newRound", ({ question }) => {
   questionEl.innerText = question;
-  statusEl.innerText = "";
+  statusEl.innerText = "TEKAN BUZZ!";
+  buzzBtn.disabled = false;
 });
 
-socket.on("buzzWinner", (player) => {
-  if (player.id === socket.id) {
-    statusEl.innerText = "KAMU MENJAWAB!";
-  } else {
-    statusEl.innerText = `${player.name} menjawab`;
+socket.on("buzzQueueUpdate", ({ active }) => {
+  if (!active) {
+    statusEl.innerText = "MENUNGGU...";
+    buzzBtn.disabled = false;
+    return;
   }
-});
 
-socket.on("resetBuzz", () => {
-  statusEl.innerText = "";
+  if (active.id === socket.id) {
+    statusEl.innerText = "GILIRAN KAMU!";
+    buzzBtn.disabled = true;
+  } else {
+    statusEl.innerText = `GILIRAN: ${active.name}`;
+    buzzBtn.disabled = true;
+  }
 });
