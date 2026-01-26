@@ -2,7 +2,15 @@ const socket = io();
 
 const name = localStorage.getItem("playerName");
 const code = localStorage.getItem("roomCode");
-if (!name || !code) location.href = "index.html";
+
+console.log("=== PLAYER.JS LOADED ===");
+console.log("Name from localStorage:", name);
+console.log("Code from localStorage:", code);
+
+if (!name || !code) {
+  console.log("Missing name or code, redirecting to index.html");
+  location.href = "index.html";
+}
 
 const statusEl = document.getElementById("status");
 const questionEl = document.getElementById("question");
@@ -11,14 +19,35 @@ const buzzBtn = document.getElementById("buzz");
 const waitingGif = document.getElementById("waitingGif");
 
 let answers = [];
+let joinAttempted = false;
 
-socket.emit("joinRoom", { name, code });
+// Coba join langsung ke room
+socket.on("connect", () => {
+  console.log("Socket connected:", socket.id);
+  if (!joinAttempted) {
+    joinAttempted = true;
+    console.log("Emitting joinRoom with:", { name, code });
+    socket.emit("joinRoom", { name, code });
+  }
+});
+
+socket.on("joinSuccess", () => {
+  console.log("✓ Joined room successfully");
+});
+
+socket.on("joinFailed", (message) => {
+  console.error("✗ Join failed:", message);
+  alert("Gagal bergabung: " + message);
+  setTimeout(() => location.href = "index.html", 1000);
+});
 
 buzzBtn.onclick = () => {
+  console.log("Buzz button clicked");
   socket.emit("buzz", code);
 };
 
 socket.on("newRound", ({ question, answers: ans }) => {
+  console.log("✓ New round received:", question);
   answers = ans;
   questionEl.innerText = question;
   answerList.innerHTML = answers.map((a, i) => `
@@ -43,6 +72,7 @@ socket.on("answerRevealed", ({ index }) => {
 });
 
 socket.on("waitForQuestion", () => {
+  console.log("⏳ Waiting for question");
   statusEl.innerText = "MENUNGGU SOAL...";
   questionEl.innerText = "-";
   answerList.innerHTML = "";
@@ -51,18 +81,28 @@ socket.on("waitForQuestion", () => {
   answers = [];
 });
 
-socket.on("buzzQueueUpdate", ({ active }) => {
+socket.on("buzzQueueUpdate", ({ queue, active }) => {
+  console.log("📋 Buzz queue updated:", queue, "Active:", active);
   if (!active) {
     statusEl.innerText = "MENUNGGU...";
     buzzBtn.disabled = false;
     return;
   }
 
+  // Cek apakah pemain ini sudah buzz
+  const playerAlreadyBuzzed = queue.some(p => p.id === socket.id);
+
   if (active.id === socket.id) {
     statusEl.innerText = "GILIRAN KAMU!";
     buzzBtn.disabled = true;
-  } else {
-    statusEl.innerText = `GILIRAN: ${active.name}`;
+  } else if (playerAlreadyBuzzed) {
+    // Pemain sudah buzz, tapi menunggu giliran
+    const position = queue.findIndex(p => p.id === socket.id) + 1;
+    statusEl.innerText = `ANTRIAN KE-${position}: ${active.name}`;
     buzzBtn.disabled = true;
+  } else {
+    // Pemain belum buzz, bisa tekan
+    statusEl.innerText = `GILIRAN: ${active.name}`;
+    buzzBtn.disabled = false;
   }
 });

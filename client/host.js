@@ -3,6 +3,9 @@ const socket = io();
 const name = localStorage.getItem("playerName");
 if (!name) location.href = "index.html";
 
+console.log("=== HOST.JS LOADED ===");
+console.log("Host name:", name);
+
 const codeEl = document.getElementById("code");
 const playersEl = document.getElementById("players");
 const answersDiv = document.getElementById("answers");
@@ -31,6 +34,7 @@ socket.on("roomCreated", (code) => {
   currentCode = code;
   codeEl.innerText = code;
   localStorage.setItem("roomCode", code);
+  console.log("Room created:", code);
 });
 
 socket.on("roomReconnected", (code) => {
@@ -40,7 +44,7 @@ socket.on("roomReconnected", (code) => {
 });
 
 socket.on("reconnectFailed", () => {
-  alert("Gagal reconnect, membuat room baru");
+  console.log("Reconnect failed, creating new room");
   localStorage.removeItem("roomCode");
   socket.emit("createRoom", name);
 });
@@ -119,6 +123,7 @@ newRoundBtn.onclick = () => {
 };
 
 socket.on("playerList", (players) => {
+  console.log("Player list updated:", players);
   playersEl.innerHTML = "";
   players.forEach(p => {
     const li = document.createElement("li");
