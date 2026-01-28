@@ -17,22 +17,45 @@ const questionEl = document.getElementById("question");
 const answerList = document.getElementById("answerList");
 const buzzBtn = document.getElementById("buzz");
 const waitingGif = document.getElementById("waitingGif");
+const playerNameEl = document.getElementById("playerName");
 
 let answers = [];
+let hasReceivedRound = false;
 let joinAttempted = false;
 
-// Coba join langsung ke room
+// Coba reconnect jika sudah pernah join sebelumnya
 socket.on("connect", () => {
-  console.log("Socket connected:", socket.id);
+  console.log("🔗 Socket connected:", socket.id);
   if (!joinAttempted) {
     joinAttempted = true;
-    console.log("Emitting joinRoom with:", { name, code });
-    socket.emit("joinRoom", { name, code });
+    console.log("🔄 Attempting to reconnect player with data:", { code, name });
+    socket.emit("reconnectPlayer", { code, name });
+    console.log("📤 reconnectPlayer event sent");
   }
 });
 
 socket.on("joinSuccess", () => {
   console.log("✓ Joined room successfully");
+  playerNameEl.textContent = `Player: ${name}`;
+  // Set default waiting state - akan di-override jika server kirim newRound
+  waitingGif.style.display = "block";
+  buzzBtn.style.display = "none";
+  statusEl.innerText = "MENUNGGU SOAL...";
+});
+
+socket.on("reconnectSuccess", () => {
+  console.log("✓ Reconnected successfully");
+  playerNameEl.textContent = `Player: ${name}`;
+  // Set default waiting state - akan di-override jika server kirim newRound
+  waitingGif.style.display = "block";
+  buzzBtn.style.display = "none";
+  statusEl.innerText = "MENUNGGU SOAL...";
+});
+
+socket.on("reconnectFailed", () => {
+  // Jika reconnect gagal, join sebagai pemain baru
+  console.log("Reconnect failed, joining as new player");
+  socket.emit("joinRoom", { name, code });
 });
 
 socket.on("joinFailed", (message) => {
@@ -48,6 +71,7 @@ buzzBtn.onclick = () => {
 
 socket.on("newRound", ({ question, answers: ans }) => {
   console.log("✓ New round received:", question);
+  hasReceivedRound = true; // Mark bahwa sudah menerima round
   answers = ans;
   questionEl.innerText = question;
   answerList.innerHTML = answers.map((a, i) => `
@@ -58,6 +82,7 @@ socket.on("newRound", ({ question, answers: ans }) => {
   `).join('');
   waitingGif.style.display = "none";
   statusEl.innerText = "TEKAN BUZZ!";
+  buzzBtn.style.display = "block";
   buzzBtn.disabled = false;
 });
 
@@ -73,10 +98,12 @@ socket.on("answerRevealed", ({ index }) => {
 
 socket.on("waitForQuestion", () => {
   console.log("⏳ Waiting for question");
+  hasReceivedRound = true; // Mark bahwa sudah menerima response dari server
   statusEl.innerText = "MENUNGGU SOAL...";
   questionEl.innerText = "-";
   answerList.innerHTML = "";
   waitingGif.style.display = "block";
+  buzzBtn.style.display = "none";
   buzzBtn.disabled = true;
   answers = [];
 });
@@ -84,7 +111,7 @@ socket.on("waitForQuestion", () => {
 socket.on("buzzQueueUpdate", ({ queue, active }) => {
   console.log("📋 Buzz queue updated:", queue, "Active:", active);
   if (!active) {
-    statusEl.innerText = "MENUNGGU...";
+    statusEl.innerText = "MENUNGGU SOAL...";
     buzzBtn.disabled = false;
     return;
   }
@@ -98,7 +125,7 @@ socket.on("buzzQueueUpdate", ({ queue, active }) => {
   } else if (playerAlreadyBuzzed) {
     // Pemain sudah buzz, tapi menunggu giliran
     const position = queue.findIndex(p => p.id === socket.id) + 1;
-    statusEl.innerText = `ANTRIAN KE-${position}: ${active.name}`;
+    statusEl.innerText = `ANTRIAN KE-${position}\nSEKARANG GILIRAN ${active.name}`;
     buzzBtn.disabled = true;
   } else {
     // Pemain belum buzz, bisa tekan

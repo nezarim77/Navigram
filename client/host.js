@@ -132,20 +132,6 @@ socket.on("playerList", (players) => {
   });
 });
 
-socket.on("newRound", ({ question, answers }) => {
-  activeQuestionEl.innerText = question;
-  answerList.innerHTML = answers.map((a, i) => `
-    <div class="answer ${a.revealed ? 'revealed' : ''}" onclick="revealAnswer(${i})">
-      ${a.text}
-      <span>${a.score}</span>
-    </div>
-  `).join('');
-});
-
-function revealAnswer(index) {
-  socket.emit("confirmAnswer", { code: currentCode, answerIndex: index });
-}
-
 socket.on("waitForQuestion", () => {
   activeQuestionEl.innerText = "-";
   answerList.innerHTML = "";

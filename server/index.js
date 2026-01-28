@@ -28,10 +28,24 @@ socket.on("joinOverlay", (code) => {
   // RECONNECT HOST
   // =====================
   socket.on("reconnectHost", ({ code, name }) => {
+    console.log("🔄 RECONNECT HOST REQUEST:", name, "to room", code);
     const room = rooms[code];
-    if (!room || room.hostName !== name) return socket.emit("reconnectFailed");
+    if (!room) {
+      console.log("❌ Room not found for host reconnect:", code);
+      socket.emit("reconnectFailed");
+      return;
+    }
 
+    // Case insensitive host name matching
+    if (room.hostName.toLowerCase() !== name.toLowerCase()) {
+      console.log("❌ Host name mismatch:", room.hostName, "vs", name);
+      socket.emit("reconnectFailed");
+      return;
+    }
+
+    console.log("✅ Host reconnected:", name, "to room", code);
     room.host = socket.id;
+    room.hostDisconnected = false; // Clear disconnect flag
     socket.join(code);
     socket.emit("roomReconnected", code);
     io.to(code).emit("playerList", room.players);
@@ -47,47 +61,54 @@ socket.on("joinOverlay", (code) => {
       queue: room.buzzQueue,
       active: room.buzzQueue[0] || null
     });
-
-    console.log("HOST RECONNECTED:", code);
   });
 
   // =====================
   // RECONNECT PLAYER
   // =====================
   socket.on("reconnectPlayer", ({ code, name }) => {
-    console.log("RECONNECT PLAYER REQUEST:", name, "to room", code);
+    console.log("🔄 RECONNECT PLAYER REQUEST:", name, "to room", code);
+    console.log("📋 Available rooms:", Object.keys(rooms));
     const room = rooms[code];
     if (!room) {
-      console.log("Room not found for reconnect:", code);
+      console.log("❌ Room not found for reconnect:", code);
       socket.emit("reconnectFailed");
       return;
     }
 
-    // Cari pemain dengan nama yang sama
-    let player = room.players.find(p => p.name === name);
+    console.log("✅ Room found:", code, "Players in room:", room.players.map(p => ({name: p.name, score: p.score, id: p.id})));
+    // Cari pemain dengan nama yang sama (case insensitive)
+    let player = room.players.find(p => p.name.toLowerCase() === name.toLowerCase());
     
     if (player) {
-      console.log("Player found, reconnecting:", name);
+      console.log("✅ Player found, reconnecting:", name, "Current score:", player.score);
       // Update socket ID dengan ID baru
+      const oldSocketId = player.id;
       player.id = socket.id;
+      console.log("🔄 Socket ID updated from", oldSocketId, "to", socket.id);
       
       // Update di buzz queue jika ada
       const buzzIndex = room.buzzQueue.findIndex(p => p.name === name);
       if (buzzIndex !== -1) {
         room.buzzQueue[buzzIndex].id = socket.id;
+        room.buzzQueue[buzzIndex].disconnected = false; // Remove disconnected flag
+        console.log("✅ Player reconnected to buzzQueue position:", buzzIndex + 1);
       }
 
       socket.join(code);
+      console.log("📤 Sending reconnectSuccess to", name);
       socket.emit("reconnectSuccess", { code, name });
       io.to(code).emit("playerList", room.players);
       
       if (room.question) {
-        io.to(code).emit("newRound", {
+        console.log("📤 Sending current question to reconnected player:", room.question);
+        socket.emit("newRound", {
           question: room.question,
           answers: room.answers
         });
       } else {
-        io.to(code).emit("waitForQuestion");
+        console.log("📤 Telling reconnected player to wait");
+        socket.emit("waitForQuestion");
       }
       
       io.to(code).emit("buzzQueueUpdate", {
@@ -95,9 +116,9 @@ socket.on("joinOverlay", (code) => {
         active: room.buzzQueue[0] || null
       });
 
-      console.log("PLAYER RECONNECTED:", name, "to", code);
+      console.log("✅ PLAYER RECONNECTED:", name, "to", code);
     } else {
-      console.log("Player not found in room for reconnect, will join as new player:", name);
+      console.log("❌ Player not found in room for reconnect, will join as new player:", name);
       socket.emit("reconnectFailed");
     }
   });
@@ -302,12 +323,46 @@ socket.on("joinOverlay", (code) => {
     for (const code in rooms) {
       const room = rooms[code];
 
+      // Hapus dari players list
+      const wasInPlayers = room.players.some(p => p.id === socket.id);
       room.players = room.players.filter(p => p.id !== socket.id);
-      room.buzzQueue = room.buzzQueue.filter(p => p.id !== socket.id);
+
+      // Untuk buzzQueue, jangan hapus langsung - beri waktu untuk reconnect
+      // Tandai sebagai disconnected tapi tetap di queue
+      const buzzIndex = room.buzzQueue.findIndex(p => p.id === socket.id);
+      if (buzzIndex !== -1) {
+        room.buzzQueue[buzzIndex].disconnected = true;
+        console.log("Player marked as disconnected in buzzQueue:", room.buzzQueue[buzzIndex].name);
+
+        // Set timeout untuk hapus dari queue jika tidak reconnect dalam 10 detik
+        setTimeout(() => {
+          const stillDisconnected = room.buzzQueue.findIndex(p => p.id === socket.id && p.disconnected);
+          if (stillDisconnected !== -1) {
+            console.log("Removing disconnected player from buzzQueue:", room.buzzQueue[stillDisconnected].name);
+            room.buzzQueue.splice(stillDisconnected, 1);
+
+            // Jika player yang dihapus sedang active, lanjut ke next turn
+            if (stillDisconnected === 0 && room.buzzQueue.length > 0) {
+              io.to(code).emit("buzzQueueUpdate", {
+                queue: room.buzzQueue,
+                active: room.buzzQueue[0] || null
+              });
+            }
+          }
+        }, 10000); // 10 detik timeout
+      }
 
       if (room.host === socket.id) {
-        delete rooms[code];
-        console.log("ROOM CLOSED:", code);
+        room.hostDisconnected = true;
+        console.log("Host disconnected from room:", code, "- Room will be kept for 30 seconds");
+
+        // Set timeout untuk hapus room jika host tidak reconnect dalam 30 detik
+        setTimeout(() => {
+          if (room.hostDisconnected) {
+            delete rooms[code];
+            console.log("ROOM CLOSED due to host timeout:", code);
+          }
+        }, 30000); // 30 detik timeout untuk host
       } else {
         io.to(code).emit("playerList", room.players);
       }
